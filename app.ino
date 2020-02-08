@@ -16,10 +16,9 @@
 static bool messagePending = false;
 static bool messageSending = true;
 
-
-  char ssid[] = "Abhijith wifi";
-    char pass[] = "Sciencekannan452000!@#$%";
-    char connectionString[] = "HostName=ESP8266hub23.azure-devices.net;DeviceId=espmodule1;SharedAccessKey=6SnVr6Wn37s3dqEtOCniuzCiG5YDf3s9LmOUYOAv4U4=";
+char ssid[] = "WIFI SSID";
+char pass[] = "WIFI PASSWORD";
+char connectionString[] = "PRIMARY CONNECTION STRING";
   
 
 static int interval = INTERVAL;
