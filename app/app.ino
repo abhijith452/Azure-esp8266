@@ -2,10 +2,9 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 // Please use an Arduino IDE 1.6.8 or greater
+
 #define LED_PIN 16
 #define DEVICE_ID "SparkFun ESP8266 Thing Dev"
-
-
 #define INTERVAL 2000
 
 #define MESSAGE_MAX_LEN 256
@@ -22,9 +21,9 @@
 static bool messagePending = false;
 static bool messageSending = true;
 
-char ssid[] = "Abhijith wifi";
-char pass[] = "Sciencekannan452000!@#$%";
-char connectionString[] = "HostName=IothubCenter.azure-devices.net;DeviceId=NodeMcu;SharedAccessKey=04mSKCVXVhghBeAbUbIzwPuEUjcxktfyxTuyZbPZGrQ=";
+char ssid[] = "SSID";
+char pass[] = "PASSWORD";
+char connectionString[] = "PRIMARY CONNECTION STRING";
   
 
 static int interval = INTERVAL;
