@@ -1,13 +1,8 @@
-#include <Adafruit_Sensor.h>
+
 #include <ArduinoJson.h>
-#include <DHT.h>
 
-#if SIMULATED_DATA
 
-void initSensor()
-{
-    // use SIMULATED_DATA, no sensor need to be inited
-}
+
 
 float readTemperature()
 {
@@ -19,25 +14,7 @@ float readHumidity()
     return random(30, 40);
 }
 
-#else
 
-static DHT dht(DHT_PIN, DHT_TYPE);
-void initSensor()
-{
-    dht.begin();
-}
-
-float readTemperature()
-{
-    return dht.readTemperature();
-}
-
-float readHumidity()
-{
-    return dht.readHumidity();
-}
-
-#endif
 
 bool readMessage(int messageId, char *payload)
 {
@@ -57,10 +34,7 @@ bool readMessage(int messageId, char *payload)
     else
     {
         root["temperature"] = temperature;
-        if (temperature > TEMPERATURE_ALERT)
-        {
-            temperatureAlert = true;
-        }
+       
     }
 
     if (std::isnan(humidity))

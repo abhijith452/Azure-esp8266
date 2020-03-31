@@ -2,6 +2,13 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 // Please use an Arduino IDE 1.6.8 or greater
+#define LED_PIN 16
+#define DEVICE_ID "SparkFun ESP8266 Thing Dev"
+
+
+#define INTERVAL 2000
+
+#define MESSAGE_MAX_LEN 256
 
 #include <ESP8266WiFi.h>
 #include <WiFiClientSecure.h>
@@ -11,14 +18,13 @@
 #include <AzureIoTProtocol_MQTT.h>
 #include <AzureIoTUtility.h>
 
-#include "config.h"
 
 static bool messagePending = false;
 static bool messageSending = true;
 
-char ssid[] = "WIFI SSID";
-char pass[] = "WIFI PASSWORD";
-char connectionString[] = "PRIMARY CONNECTION STRING";
+char ssid[] = "Abhijith wifi";
+char pass[] = "Sciencekannan452000!@#$%";
+char connectionString[] = "HostName=IothubCenter.azure-devices.net;DeviceId=NodeMcu;SharedAccessKey=04mSKCVXVhghBeAbUbIzwPuEUjcxktfyxTuyZbPZGrQ=";
   
 
 static int interval = INTERVAL;
@@ -87,7 +93,7 @@ void setup()
 
     initWifi();
     initTime();
-    initSensor();
+  
     
     /*
     * Break changes in version 1.0.34: AzureIoTHub library removed AzureIoTClient class.
