@@ -1,63 +1,98 @@
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
-
-// Please use an Arduino IDE 1.6.8 or greater
-
-#define LED_PIN 16
-#define DEVICE_ID "SparkFun ESP8266 Thing Dev"
-#define INTERVAL 2000
-
-#define MESSAGE_MAX_LEN 256
 
 #include <ESP8266WiFi.h>
 #include <WiFiClientSecure.h>
 #include <WiFiUdp.h>
-
 #include <AzureIoTHub.h>
 #include <AzureIoTProtocol_MQTT.h>
 #include <AzureIoTUtility.h>
+#include <ArduinoJson.h>
+#include "iothubtransportmqtt.h"
 
+#define DEVICE_ID "NodeMcu"
+#define MESSAGE_MAX_LEN 256
+#define INTERVAL 5000
+#define LED1 BUILTIN_LED
+#define LED2 16
 
 static bool messagePending = false;
 static bool messageSending = true;
 
-char ssid[] = "SSID";
-char pass[] = "PASSWORD";
-char connectionString[] = "PRIMARY CONNECTION STRING";
-  
+static int messageCount = 1;
 
-static int interval = INTERVAL;
+char ssid[] = "Abhijith wifi";
+char pass[] = "Sciencekannan452000!@#$%";
+char connectionString[] = "HostName=Nodehube.azure-devices.net;DeviceId=nodemcu;SharedAccessKey=bgcBVbzDBxv2y3H0qPr9S68HZ2Q1dDaq4tjT1WjO2DQ=";
 
-void blinkLED()
+
+static IOTHUB_CLIENT_LL_HANDLE iotHubClientHandle;
+static IOTHUB_CLIENT_TRANSPORT_PROVIDER protocol = MQTT_Protocol;
+void setup()
 {
-    digitalWrite(LED_PIN, HIGH);
-    delay(500);
-    digitalWrite(LED_PIN, LOW);
+    pinMode(LED1, OUTPUT);
+    pinMode(LED2, OUTPUT);
+    digitalWrite(LED1,HIGH);
+    digitalWrite(LED2,HIGH);
+    Serial.begin(115200);
+    initTime();
+    wifi();
+     iotHubClientHandle = IoTHubClient_LL_CreateFromConnectionString(connectionString, protocol);
+    if (iotHubClientHandle == NULL)
+    {
+        Serial.println("Failed on IoTHubClient_CreateFromConnectionString.");
+        while (1);
+    }
 }
 
-void initWifi()
+void loop()
 {
-    // Attempt to connect to Wifi network:
-    Serial.printf("Attempting to connect to SSID: %s.\r\n", ssid);
+      if (!messagePending && messageSending)
+    {
+        char messagePayload[MESSAGE_MAX_LEN];
+        readMessage(messageCount, messagePayload);
+        sendMessage(iotHubClientHandle, messagePayload);
+        delay(INTERVAL);
+    }
 
-    // Connect to WPA/WPA2 network. Change this line if using open or WEP network:
+    IoTHubClient_LL_DoWork(iotHubClientHandle);
+    delay(10);
+}
+// Initiatizing wifi
+
+void wifi()
+{
+
+    delay(10);
+
+    if (WiFi.status() == WL_CONNECTED)
+    {
+        Serial.println("Already connected...");
+        return;
+    }
+
+    // Connect to WiFi network
+    Serial.println();
+    Serial.println();
+    Serial.print("Connecting to ");
+    Serial.println(ssid);
+
     WiFi.begin(ssid, pass);
+
     while (WiFi.status() != WL_CONNECTED)
     {
-        // Get Mac Address and show it.
-        // WiFi.macAddress(mac) save the mac address into a six length array, but the endian may be different. The huzzah board should
-        // start from mac[0] to mac[5], but some other kinds of board run in the oppsite direction.
-        uint8_t mac[6];
-        WiFi.macAddress(mac);
-        Serial.printf("You device with MAC address %02x:%02x:%02x:%02x:%02x:%02x connects to %s failed! Waiting 10 seconds to retry.\r\n",
-                mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], ssid);
-        WiFi.begin(ssid, pass);
-        delay(10000);
+        delay(500);
+        Serial.print(".");
     }
-    Serial.printf("Connected to wifi %s.\r\n", ssid);
-
-    
+    Serial.println("");
+    Serial.println("WiFi connected");
+    digitalWrite(LED1,LOW);
 }
+void blink(){
+  digitalWrite(LED2,LOW);
+  delay(100);
+  digitalWrite(LED2,HIGH);
+  delay(100);
+}
+
 
 void initTime()
 {
@@ -80,49 +115,80 @@ void initTime()
         }
     }
 }
+// Getting the sensor readings and converted to json and stored in 
 
-static IOTHUB_CLIENT_LL_HANDLE iotHubClientHandle;
-void setup()
+void readMessage(int messageId, char *payload)
 {
-    pinMode(LED_PIN, OUTPUT);
-
-    initSerial();
-    delay(2000);
-
-
-    initWifi();
-    initTime();
-  
+    float temperature = random(40.,50);
+    float humidity = random(40.,50);
+    StaticJsonBuffer<MESSAGE_MAX_LEN> jsonBuffer;
+    JsonObject &root = jsonBuffer.createObject();
+    root["deviceId"] = DEVICE_ID;
     
-    /*
-    * Break changes in version 1.0.34: AzureIoTHub library removed AzureIoTClient class.
-    * So we remove the code below to avoid compile error.
-    */
-    // initIoThubClient();
-
-    iotHubClientHandle = IoTHubClient_LL_CreateFromConnectionString(connectionString, MQTT_Protocol);
-    if (iotHubClientHandle == NULL)
+    // NAN is not the valid json, change it to NULL
+    if (std::isnan(temperature))
     {
-        Serial.println("Failed on IoTHubClient_CreateFromConnectionString.");
-        while (1);
+        root["temperature"] = NULL;
+    }
+    else
+    {
+        root["temperature"] = temperature;
     }
 
-    IoTHubClient_LL_SetMessageCallback(iotHubClientHandle, receiveMessageCallback, NULL);
-    IoTHubClient_LL_SetDeviceMethodCallback(iotHubClientHandle, deviceMethodCallback, NULL);
-    IoTHubClient_LL_SetDeviceTwinCallback(iotHubClientHandle, twinCallback, NULL);
+    if (std::isnan(humidity))
+    {
+        root["humidity"] = NULL;
+    }
+    else
+    {
+        root["humidity"] = humidity;
+    }
+
+    root.printTo(payload, MESSAGE_MAX_LEN);
 }
 
-static int messageCount = 1;
-void loop()
+
+static void sendMessage(IOTHUB_CLIENT_LL_HANDLE iotHubClientHandle, char *buffer)
 {
-    if (!messagePending && messageSending)
+    // Creates a IotHub message from the given array
+    IOTHUB_MESSAGE_HANDLE messageHandle = IoTHubMessage_CreateFromByteArray((const unsigned char *)buffer, strlen(buffer));
+
+    if (messageHandle == NULL)
     {
-        char messagePayload[MESSAGE_MAX_LEN];
-        bool temperatureAlert = readMessage(messageCount, messagePayload);
-        sendMessage(iotHubClientHandle, messagePayload, temperatureAlert);
-        messageCount++;
-        delay(interval);
+        Serial.println("Unable to create a new IoTHubMessage.");
     }
-    IoTHubClient_LL_DoWork(iotHubClientHandle);
-    delay(10);
+    else
+    {
+        Serial.printf("Sending message: %s.\r\n", buffer);
+
+        // Asynchronous call to send the message specified by eventMessageHandle. Returns IOTHUB_CLIENT_OK upon success or an error code upon failure.
+
+        if (IoTHubClient_LL_SendEventAsync(iotHubClientHandle, messageHandle, sendCallback, NULL) != IOTHUB_CLIENT_OK)
+        {
+            Serial.println("Failed to hand over the message to IoTHubClient.");
+        }
+        else
+        {
+            messagePending = true;
+            Serial.println("IoTHubClient accepted the message for delivery.");
+        }
+    // Frees all resources associated with the given message handle.
+
+        IoTHubMessage_Destroy(messageHandle);
+    }
+}
+
+
+static void sendCallback(IOTHUB_CLIENT_CONFIRMATION_RESULT result, void *userContextCallback)
+{
+    if (IOTHUB_CLIENT_CONFIRMATION_OK == result)
+    {
+        Serial.println("Message sent to Azure IoT Hub");
+    }
+    else
+    {
+        Serial.println("Failed to send message to Azure IoT Hub");
+    }
+    messagePending = false;
+    blink();
 }
