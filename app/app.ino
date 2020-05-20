@@ -19,9 +19,9 @@ static bool messageSending = true;
 
 static int messageCount = 1;
 
-char ssid[] = "Abhijith wifi";
-char pass[] = "Sciencekannan452000!@#$%";
-char connectionString[] = "HostName=Nodehube.azure-devices.net;DeviceId=nodemcu;SharedAccessKey=bgcBVbzDBxv2y3H0qPr9S68HZ2Q1dDaq4tjT1WjO2DQ=";
+char ssid[] = "WIFI SSID";
+char pass[] = "WIFI PASSWORD";
+char connectionString[] = "PRIMARY CONNECTION STRING";
 
 
 static IOTHUB_CLIENT_LL_HANDLE iotHubClientHandle;
